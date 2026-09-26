@@ -1,0 +1,75 @@
+name: microservicios
+
+services:
+  postgres:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: postgres
+      PRODUCT_DB_USER: product_user
+      PRODUCT_DB_PASSWORD: ${PRODUCT_DB_PASSWORD:?Definir PRODUCT_DB_PASSWORD en .env}
+      PRODUCT_DB_NAME: product_db
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-product.sh:/docker-entrypoint-initdb.d/10-product.sh:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          PGPASSWORD="$$PRODUCT_DB_PASSWORD"
+          psql -h 127.0.0.1 -U "$$PRODUCT_DB_USER" -d "$$PRODUCT_DB_NAME"
+          -c 'SELECT 1' >/dev/null
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    networks:
+      - microservices-net
+
+  product-api:
+    build:
+      context: .
+      dockerfile: src/Services/Product/Product.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__ProductDb: "Host=postgres;Port=5432;Database=product_db;Username=product_user;Password=${PRODUCT_DB_PASSWORD:?Definir PRODUCT_DB_PASSWORD en .env}"
+    ports:
+      - "127.0.0.1:${PRODUCT_API_PORT:-5001}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - microservices-net
+
+  product-tools:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    profiles: ["tools"]
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - nuget-packages:/root/.nuget/packages
+    environment:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      ConnectionStrings__ProductDb: "Host=postgres;Port=5432;Database=product_db;Username=product_user;Password=${PRODUCT_DB_PASSWORD:?Definir PRODUCT_DB_PASSWORD en .env}"
+    command: ["dotnet", "--info"]
+    networks:
+      - microservices-net
+
+networks:
+  microservices-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  nuget-packages:
