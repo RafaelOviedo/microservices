@@ -6,7 +6,7 @@ COPY src/Services/Product/Product.Domain/Product.Domain.csproj src/Services/Prod
 COPY src/Services/Product/Product.Application/Product.Application.csproj src/Services/Product/Product.Application/
 COPY src/Services/Product/Product.Infrastructure/Product.Infrastructure.csproj src/Services/Product/Product.Infrastructure/
 COPY src/Services/Product/Product.API/Product.API.csproj src/Services/Product/Product.API/
-RUN dotnet restore Microservices.sln
+RUN dotnet restore src/Services/Product/Product.API/Product.API.csproj
 
 COPY src/ ./src/
 RUN dotnet publish src/Services/Product/Product.API/Product.API.csproj \
@@ -20,5 +20,6 @@ RUN apt-get update \
 COPY --from=build /app/publish .
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
+RUN mkdir -p /app/logs && chown "$APP_UID:$APP_UID" /app/logs
 USER $APP_UID
 ENTRYPOINT ["dotnet", "Product.API.dll"]
