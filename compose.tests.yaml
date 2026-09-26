@@ -1,0 +1,44 @@
+name: microservicios-tests
+
+services:
+  postgres-tests:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_USER: product_test
+      POSTGRES_PASSWORD: product_test_password
+      POSTGRES_DB: product_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U product_test -d product_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    networks:
+      - tests-net
+
+  product-tests:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - test-nuget:/root/.nuget/packages
+    environment:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      PRODUCT_TEST_CONNECTION: "Host=postgres-tests;Database=product_test;Username=product_test;Password=product_test_password"
+      ConnectionStrings__ProductDb: "Host=postgres-tests;Database=product_test;Username=product_test;Password=product_test_password"
+      Database__ApplyMigrationsOnStartup: "true"
+    depends_on:
+      postgres-tests:
+        condition: service_healthy
+    command: ["dotnet", "test", "tests/Product.Tests/Product.Tests.csproj", "--configuration", "Release", "--logger", "console;verbosity=normal"]
+    networks:
+      - tests-net
+
+networks:
+  tests-net:
+    driver: bridge
+
+volumes:
+  test-nuget:

@@ -36,9 +36,13 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: 8080
+      Database__ApplyMigrationsOnStartup: "true"
+      AutoMapper__LicenseKey: ${AUTOMAPPER_LICENSE_KEY:-}
       ConnectionStrings__ProductDb: "Host=postgres;Port=5432;Database=product_db;Username=product_user;Password=${PRODUCT_DB_PASSWORD:?Definir PRODUCT_DB_PASSWORD en .env}"
     ports:
       - "127.0.0.1:${PRODUCT_API_PORT:-5001}:8080"
+    volumes:
+      - product-logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,3 +77,4 @@ networks:
 volumes:
   postgres-data:
   nuget-packages:
+  product-logs:

@@ -10,12 +10,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Product.Infrastructure", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Product.API", "src\Services\Product\Product.API\Product.API.csproj", "{DE266B36-98B9-5F5F-95D7-87936C59C467}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Product.Tests", "tests\Product.Tests\Product.Tests.csproj", "{7FEAF8D4-50BA-524B-AEC9-75E82A22CD5F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7FEAF8D4-50BA-524B-AEC9-75E82A22CD5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FEAF8D4-50BA-524B-AEC9-75E82A22CD5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FEAF8D4-50BA-524B-AEC9-75E82A22CD5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FEAF8D4-50BA-524B-AEC9-75E82A22CD5F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{28E1C13B-3B94-5A9A-A8E6-94AA0D0E40C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{28E1C13B-3B94-5A9A-A8E6-94AA0D0E40C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{28E1C13B-3B94-5A9A-A8E6-94AA0D0E40C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
