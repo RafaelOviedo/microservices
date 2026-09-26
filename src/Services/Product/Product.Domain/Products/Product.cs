@@ -1,0 +1,74 @@
+using Product.Domain.Exceptions;
+using Product.Domain.ValueObjects;
+
+namespace Product.Domain.Products;
+
+public sealed class Product
+{
+    public const int NameMaxLength = 200;
+    public const int DescriptionMaxLength = 2000;
+
+    public Guid Id { get; private set; }
+    public string Name { get; private set; } = string.Empty;
+    public string Description { get; private set; } = string.Empty;
+    public Money Price { get; private set; } = null!;
+    public int Stock { get; private set; }
+    public bool IsDeleted { get; private set; }
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+    public DateTimeOffset? UpdatedAtUtc { get; private set; }
+    public DateTimeOffset? DeletedAtUtc { get; private set; }
+    public Guid Version { get; private set; }
+
+    private Product() { }
+
+    public static Product Create(string name, string description, Money price, int stock, DateTimeOffset now)
+    {
+        Validate(name, description, price, stock);
+        return new Product
+        {
+            Id = Guid.NewGuid(),
+            Name = name.Trim(),
+            Description = description.Trim(),
+            Price = price,
+            Stock = stock,
+            CreatedAtUtc = now.ToUniversalTime(),
+            Version = Guid.NewGuid()
+        };
+    }
+
+    public void Update(string name, string description, Money price, int stock, DateTimeOffset now)
+    {
+        if (IsDeleted)
+            throw new DomainValidationException("No se puede modificar un producto eliminado.");
+
+        // Validar antes de modificar el agregado evita cambios parciales en memoria.
+        Validate(name, description, price, stock);
+        Name = name.Trim();
+        Description = description.Trim();
+        Price = price;
+        Stock = stock;
+        UpdatedAtUtc = now.ToUniversalTime();
+        Version = Guid.NewGuid();
+    }
+
+    public void Delete(DateTimeOffset now)
+    {
+        if (IsDeleted) return;
+        IsDeleted = true;
+        DeletedAtUtc = now.ToUniversalTime();
+        UpdatedAtUtc = DeletedAtUtc;
+        Version = Guid.NewGuid();
+    }
+
+    private static void Validate(string name, string description, Money price, int stock)
+    {
+        if (string.IsNullOrWhiteSpace(name) || name.Length > NameMaxLength)
+            throw new DomainValidationException($"El nombre es obligatorio y admite hasta {NameMaxLength} caracteres.");
+        if (string.IsNullOrWhiteSpace(description) || description.Length > DescriptionMaxLength)
+            throw new DomainValidationException($"La descripción es obligatoria y admite hasta {DescriptionMaxLength} caracteres.");
+        if (price is null)
+            throw new DomainValidationException("El precio es obligatorio.");
+        if (stock < 0)
+            throw new DomainValidationException("El stock no puede ser negativo.");
+    }
+}

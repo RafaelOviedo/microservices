@@ -1,7 +1,9 @@
 # Product.Domain
 
-Aquí se incorporarán el agregado Product, el value object Money y las reglas de negocio en el punto 2.
-Esta capa no depende de Entity Framework, HTTP ni otros proyectos de la solución.
+El agregado `Product` controla la creación, actualización y baja lógica del producto.
+`Money` es un value object inmutable que admite precios positivos con hasta dos decimales.
+Esta capa no depende de EF Core, HTTP ni los demás proyectos.
 
-Todo borrado será lógico: IsDeleted y DeletedAtUtc. Un producto eliminado no estará disponible
-para consultas habituales ni nuevas compras, y se conservará en la base de datos.
+`Delete` establece `IsDeleted` y `DeletedAtUtc` en UTC y conserva los datos.
+Un producto eliminado no admite cambios; repetir la baja en el dominio conserva la fecha original.
+`Version` permite detectar escrituras concurrentes mediante la configuración de persistencia.
