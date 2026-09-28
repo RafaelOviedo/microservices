@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Customer.Domain/Customer.Domain.csproj" />
+    <PackageReference Include="AutoMapper" Version="15.1.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.0" />
+  </ItemGroup>
+</Project>
