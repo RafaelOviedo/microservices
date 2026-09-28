@@ -35,6 +35,22 @@ public sealed class DomainTests
         Assert.NotEqual(Guid.Empty, product.Id);
     }
 
+    [Fact]
+    public void AllAuditDatesUseUtcMicrosecondPrecision()
+    {
+        var product = ProductEntity.Create("Producto", "Descripción", Money.From(10), 1,
+            Now.AddTicks(12345).ToOffset(TimeSpan.FromHours(-3)));
+        Assert.Equal(Now.AddTicks(12340), product.CreatedAtUtc);
+        Assert.Equal(TimeSpan.Zero, product.CreatedAtUtc.Offset);
+
+        product.Update("Actualizado", "Descripción", Money.From(20), 2, Now.AddSeconds(1).AddTicks(6789));
+        Assert.Equal(Now.AddSeconds(1).AddTicks(6780), product.UpdatedAtUtc);
+
+        product.Delete(Now.AddSeconds(2).AddTicks(9876));
+        Assert.Equal(Now.AddSeconds(2).AddTicks(9870), product.DeletedAtUtc);
+        Assert.Equal(product.DeletedAtUtc, product.UpdatedAtUtc);
+    }
+
     [Theory]
     [InlineData(" ", "Descripción", 1)]
     [InlineData("Producto", " ", 1)]

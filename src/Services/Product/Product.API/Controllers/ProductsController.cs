@@ -5,7 +5,6 @@ namespace Product.API.Controllers;
 
 [ApiController]
 [Route("api/products")]
-[Produces("application/json")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
 public sealed class ProductsController(IProductService productService) : ControllerBase
 {

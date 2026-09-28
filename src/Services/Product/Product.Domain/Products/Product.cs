@@ -31,7 +31,7 @@ public sealed class Product
             Description = description.Trim(),
             Price = price,
             Stock = stock,
-            CreatedAtUtc = now.ToUniversalTime(),
+            CreatedAtUtc = NormalizeTimestamp(now),
             Version = Guid.NewGuid()
         };
     }
@@ -47,7 +47,7 @@ public sealed class Product
         Description = description.Trim();
         Price = price;
         Stock = stock;
-        UpdatedAtUtc = now.ToUniversalTime();
+        UpdatedAtUtc = NormalizeTimestamp(now);
         Version = Guid.NewGuid();
     }
 
@@ -55,9 +55,16 @@ public sealed class Product
     {
         if (IsDeleted) return;
         IsDeleted = true;
-        DeletedAtUtc = now.ToUniversalTime();
+        DeletedAtUtc = NormalizeTimestamp(now);
         UpdatedAtUtc = DeletedAtUtc;
         Version = Guid.NewGuid();
+    }
+
+    // Usar microsegundos mantiene las fechas idénticas al persistirlas y volver a leerlas.
+    private static DateTimeOffset NormalizeTimestamp(DateTimeOffset now)
+    {
+        var utc = now.ToUniversalTime();
+        return utc.AddTicks(-(utc.Ticks % TimeSpan.TicksPerMicrosecond));
     }
 
     private static void Validate(string name, string description, Money price, int stock)

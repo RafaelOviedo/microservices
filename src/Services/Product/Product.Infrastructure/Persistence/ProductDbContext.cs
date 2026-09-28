@@ -31,9 +31,9 @@ public sealed class ProductDbContext(DbContextOptions<ProductDbContext> options,
         foreach (var entry in ChangeTracker.Entries<ProductEntity>().Where(x => x.State == EntityState.Deleted).ToList())
         {
             // Incluso Remove/RemoveRange deben conservar el registro. Solo actualizar los campos del borrado.
-            var originalVersion = entry.Property(x => x.Version).OriginalValue;
+            // Descartar cambios pendientes: una baja no debe guardar ediciones ajenas al borrado.
+            entry.CurrentValues.SetValues(entry.OriginalValues);
             entry.State = EntityState.Unchanged;
-            entry.Property(x => x.Version).OriginalValue = originalVersion;
             entry.Entity.Delete(clock.GetUtcNow());
             entry.Property(x => x.IsDeleted).IsModified = true;
             entry.Property(x => x.DeletedAtUtc).IsModified = true;

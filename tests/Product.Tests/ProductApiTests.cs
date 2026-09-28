@@ -53,6 +53,7 @@ public sealed class ProductApiTests(ProductApiFactory factory) : IClassFixture<P
         Assert.Equal("Mouse", updated.Name);
         Assert.Equal(99.99m, updated.Price);
         Assert.Equal(0, updated.Stock);
+        Assert.Equal(updated, await client.GetFromJsonAsync<ProductResponse>($"/api/products/{created.Id}"));
         Assert.Contains((await client.GetFromJsonAsync<List<ProductResponse>>("/api/products"))!, product => product.Id == created.Id);
     }
 

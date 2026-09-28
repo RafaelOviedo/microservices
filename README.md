@@ -4,16 +4,19 @@ Backend de una aplicación de ventas orientada a gestionar productos, clientes y
 
 La solución contempla tres microservicios: **Product**, para el catálogo y el stock; **Customer**, para los datos de los clientes; y **Order**, para las compras y su historial. Cada servicio tendrá su propia base de datos y se comunicará con los demás mediante HTTP.
 
-Actualmente se incluye la estructura inicial de Product, su conexión con PostgreSQL y Swagger. Las operaciones de negocio todavía no están implementadas.
+Product permite crear, consultar, actualizar y dar de baja productos con nombre, descripción, precio y stock. Las bajas son lógicas: los datos se conservan en PostgreSQL y se excluyen de las consultas habituales. Customer y Order se incorporarán en las siguientes etapas.
 
 ## Tecnologías utilizadas
 
 | Tecnología | Uso |
 |---|---|
 | C# y ASP.NET Core 8 | Desarrollo y ejecución de la API. |
-| Clean Architecture | Separación en Domain, Application, Infrastructure y API. |
+| Clean Architecture y DDD | Separación en cuatro capas, agregado Product y value object Money. |
 | Entity Framework Core 8 y Npgsql | Acceso a PostgreSQL y herramientas para migraciones. |
 | PostgreSQL 17 | Base de datos relacional. |
+| FluentValidation | Validación de las solicitudes. |
+| AutoMapper | Conversión de entidades a DTOs de respuesta. |
+| Serilog | Registro de solicitudes y errores en consola y archivos. |
 | Swagger / OpenAPI | Documentación y exploración de la API. |
 | Docker | Compilación y ejecución en contenedores con .NET 8. |
 | Docker Compose | Configuración de servicios, red, volúmenes y orden de inicio. |
@@ -34,9 +37,9 @@ Dentro de esa red, los contenedores se encuentran por el nombre del servicio. Po
 
 Los puertos publicados permiten acceder desde tu equipo: `5001` se redirige al puerto `8080` de la API y `55432` al puerto `5432` de PostgreSQL. Están vinculados a `127.0.0.1`, por lo que solo se publican para acceso local. Dentro de un contenedor, `localhost` se refiere a ese mismo contenedor; para comunicarse con otro servicio se utiliza su nombre en la red.
 
-Product comienza a ejecutarse cuando PostgreSQL supera su comprobación de disponibilidad. La API también tiene una comprobación que verifica su conexión con la base. `product-tools` pertenece al perfil opcional `tools` y solo se inicia cuando se solicita explícitamente.
+Product comienza a ejecutarse cuando PostgreSQL supera su comprobación de disponibilidad y aplica las migraciones pendientes antes de atender solicitudes. La API también tiene una comprobación que verifica su conexión con la base. `product-tools` pertenece al perfil opcional `tools` y solo se inicia cuando se solicita explícitamente.
 
-PostgreSQL conserva sus datos en el volumen `postgres-data`. Durante la primera inicialización se crean la base `product_db` y el usuario `product_user`, que utiliza la API. El volumen `nuget-packages` conserva la caché de dependencias del contenedor de herramientas.
+PostgreSQL conserva sus datos en el volumen `postgres-data`. Durante la primera inicialización se crean la base `product_db` y el usuario `product_user`, que utiliza la API. El volumen `nuget-packages` conserva la caché de dependencias del contenedor de herramientas. Los archivos de Serilog se guardan en `/app/logs`, dentro del volumen `product-logs`, y se conservan al recrear la API. Los logs tienen rotación diaria.
 
 ## Instalación y ejecución
 
@@ -65,6 +68,7 @@ Si acabás de copiar el ejemplo, reemplazá las contraseñas por valores distint
 | `PRODUCT_DB_PASSWORD` | Contraseña del usuario `product_user`, utilizada por la API. |
 | `POSTGRES_PORT` | Puerto local de PostgreSQL; por defecto, `55432`. |
 | `PRODUCT_API_PORT` | Puerto local de la API; por defecto, `5001`. |
+| `AUTOMAPPER_LICENSE_KEY` | Clave de AutoMapper, si disponés de una; se puede dejar vacía durante el desarrollo y las pruebas. |
 
 El archivo `.env` contiene credenciales locales y está excluido del control de versiones. Si alguno de los puertos está ocupado, cambiá su valor antes de iniciar los servicios.
 
@@ -74,7 +78,7 @@ El archivo `.env` contiene credenciales locales y está excluido del control de 
 docker compose up --build -d --wait
 ```
 
-Este comando descarga las imágenes necesarias, compila Product y crea la red, los volúmenes y los contenedores. Espera a que la API y PostgreSQL estén disponibles.
+Este comando descarga las imágenes necesarias, compila Product y crea la red, los volúmenes y los contenedores. La configuración local aplica automáticamente la migración inicial de Product y las migraciones pendientes. El comando espera a que la API y PostgreSQL estén disponibles.
 
 ### 3. Acceder a la aplicación
 
@@ -84,7 +88,7 @@ Con los puertos predeterminados:
 - Estado del proceso de la API: [http://localhost:5001/health/live](http://localhost:5001/health/live).
 - Disponibilidad de la conexión con PostgreSQL: [http://localhost:5001/health/ready](http://localhost:5001/health/ready).
 
-Swagger todavía no muestra operaciones de productos porque el CRUD está pendiente de implementación.
+En Swagger podés ejecutar las operaciones de creación, consulta, actualización y baja lógica de productos.
 
 Para conectarte desde un cliente de base de datos, usá el servidor `localhost`, puerto `55432`, base `product_db`, usuario `product_user` y la contraseña configurada en `PRODUCT_DB_PASSWORD`.
 
