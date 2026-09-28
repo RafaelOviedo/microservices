@@ -2,7 +2,7 @@
 
 Backend de una aplicación de ventas orientada a gestionar productos, clientes y órdenes de compra mediante APIs REST que pueda consumir una aplicación web.
 
-La solución contempla tres microservicios: **Product**, para el catálogo y el stock; **Customer**, para los datos de los clientes; y **Order**, para las compras y su historial. Product y Customer están implementados y tienen bases de datos independientes. Order tiene su estructura, modelo de órdenes y base de datos preparados; su creación y consulta de órdenes y la integración HTTP se incorporarán en los siguientes bloques.
+La solución contempla tres microservicios: **Product**, para el catálogo y el stock; **Customer**, para los datos de los clientes; y **Order**, para las compras y su historial. Product y Customer están implementados y tienen bases de datos independientes. Order permite crear órdenes pendientes de confirmar stock y consultarlas por ID. Obtiene el cliente y los productos mediante HTTP, calcula los importes y conserva sus datos históricos. La confirmación y el descuento de stock se incorporarán en el siguiente bloque.
 
 Product permite crear, consultar, actualizar y dar de baja productos con nombre, descripción, precio y stock. Las bajas son lógicas: los datos se conservan en PostgreSQL y se excluyen de las consultas habituales. Customer permite gestionar clientes con nombre, email único, dirección y fecha de registro. También utiliza bajas lógicas.
 
@@ -29,7 +29,7 @@ El archivo `compose.yaml`, ubicado en la raíz del proyecto, define los siguient
 |---|---|---|---|
 | `product-api` | Ejecuta la API de Product. | `http://product-api:8080` | `http://localhost:5001` |
 | `customer-api` | Ejecuta la API de Customer. | `http://customer-api:8080` | `http://localhost:5002` |
-| `order-api` | Ejecuta la base de Order, con Swagger y healthchecks. | `http://order-api:8080` | `http://localhost:5003` |
+| `order-api` | Ejecuta la API de Order, con creación y consulta por ID. | `http://order-api:8080` | `http://localhost:5003` |
 | `postgres` | Aloja `product_db`, `customer_db` y `order_db`, con usuarios propios. | `postgres:5432` | `localhost:55432` |
 | `customer-db-init` | Crea la base y el usuario de Customer si todavía no existen y finaliza. | Se conecta a `postgres:5432`. | No publica puertos. |
 | `order-db-init` | Crea la base y el usuario de Order si todavía no existen y finaliza. | Se conecta a `postgres:5432`. | No publica puertos. |
@@ -43,7 +43,7 @@ Los puertos publicados permiten acceder desde tu equipo: `5001`, `5002` y `5003`
 
 Product comienza a ejecutarse cuando PostgreSQL supera su comprobación de disponibilidad. Customer y Order esperan, además, a que sus inicializadores (`customer-db-init` y `order-db-init`) terminen correctamente. Las tres APIs aplican las migraciones pendientes antes de atender solicitudes y tienen comprobaciones de conexión con sus bases. Los servicios de herramientas pertenecen al perfil opcional `tools` y solo se inician cuando se solicitan explícitamente.
 
-Las APIs comparten la red y pueden direccionarse por sus nombres de servicio. El CRUD actual de Product y Customer es independiente; la comunicación HTTP de negocio se incorporará con Order.
+Las APIs comparten la red y pueden direccionarse por sus nombres de servicio. Order consulta `http://customer-api:8080/api/customers/{id}` y `http://product-api:8080/api/products/{id}` para crear una orden. Las URLs se configuran mediante `Services__Customer__BaseUrl` y `Services__Product__BaseUrl` en Compose. Cada consulta tiene un tiempo máximo de espera de 10 segundos. Order accede únicamente a su propia base; los datos de otros servicios se obtienen por HTTP.
 
 PostgreSQL conserva sus datos en el volumen `postgres-data`. Durante la primera inicialización se crean la base `product_db` y el usuario `product_user`, que utiliza la API. Customer utiliza `customer_db` y `customer_user`; Order utiliza `order_db` y `order_user`. Sus inicializadores funcionan también cuando el volumen ya contiene otras bases. Cada API utiliza las credenciales de su propia base. El volumen `nuget-packages` conserva la caché de dependencias del contenedor de herramientas. Los archivos de Serilog se guardan en `/app/logs`, dentro de los volúmenes `product-logs`, `customer-logs` y `order-logs`, y se conservan al recrear la API. Los logs tienen rotación diaria.
 
@@ -98,11 +98,11 @@ Con los puertos predeterminados:
 
 - Swagger de Product: [http://localhost:5001/](http://localhost:5001/).
 - Swagger de Customer: [http://localhost:5002/](http://localhost:5002/).
-- Swagger de Order: [http://localhost:5003/](http://localhost:5003/), todavía sin operaciones de negocio.
+- Swagger de Order: [http://localhost:5003/](http://localhost:5003/).
 - Estado del proceso de la API: [http://localhost:5001/health/live](http://localhost:5001/health/live).
 - Disponibilidad de la conexión con PostgreSQL: [http://localhost:5001/health/ready](http://localhost:5001/health/ready).
 
-Customer y Order también exponen `/health/live` y `/health/ready` en los puertos `5002` y `5003`. En los Swagger de Product y Customer podés ejecutar las operaciones de creación, consulta, actualización y baja lógica de productos o clientes.
+Customer y Order también exponen `/health/live` y `/health/ready` en los puertos `5002` y `5003`. En los Swagger de Product y Customer podés ejecutar las operaciones de creación, consulta, actualización y baja lógica de productos o clientes. En Order podés crear una orden usando los IDs obtenidos de esas APIs y consultarla por ID. La orden queda en estado `PendingStockConfirmation`: por ahora se ajustan cantidades al stock consultado, pero todavía no se reserva ni descuenta stock.
 
 Para conectarte desde un cliente de base de datos, usá el servidor `localhost`, puerto `55432`, base `product_db`, usuario `product_user` y la contraseña configurada en `PRODUCT_DB_PASSWORD`. Para Customer, usá el mismo servidor y puerto, base `customer_db`, usuario `customer_user` y contraseña `CUSTOMER_DB_PASSWORD`. Para Order, usá la base `order_db`, el usuario `order_user` y la contraseña `ORDER_DB_PASSWORD`.
 

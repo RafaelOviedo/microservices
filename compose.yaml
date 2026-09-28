@@ -153,6 +153,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: 8080
       Database__ApplyMigrationsOnStartup: "true"
+      Services__Customer__BaseUrl: http://customer-api:8080
+      Services__Product__BaseUrl: http://product-api:8080
       AutoMapper__LicenseKey: ${AUTOMAPPER_LICENSE_KEY:-}
       ConnectionStrings__OrderDb: "Host=postgres;Port=5432;Database=order_db;Username=order_user;Password=${ORDER_DB_PASSWORD:?Definir ORDER_DB_PASSWORD en .env}"
     ports:

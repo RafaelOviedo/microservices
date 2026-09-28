@@ -9,6 +9,7 @@ public sealed class Order
     public Guid Id { get; private set; }
     public CustomerSnapshot Customer { get; private set; } = null!;
     public DateTimeOffset OrderedAtUtc { get; private set; }
+    public OrderStatus Status { get; private set; } = OrderStatus.PendingStockConfirmation;
     public Money Total { get; private set; } = null!;
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
     public bool IsDeleted { get; private set; }

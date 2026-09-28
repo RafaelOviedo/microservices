@@ -19,14 +19,15 @@ public sealed class ApiTests(OrderApiFactory factory) : IClassFixture<OrderApiFa
     }
 
     [Fact]
-    public async Task SwaggerDescribesFoundationWithoutPrematureBusinessEndpoints()
+    public async Task SwaggerDescribesCreationAndRetrieval()
     {
         using var development = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
         using var client = development.CreateClient();
         Assert.Contains("Swagger", await client.GetStringAsync("/"));
         var schema = await client.GetFromJsonAsync<JsonElement>("/swagger/v1/swagger.json");
         Assert.Equal("Order API", schema.GetProperty("info").GetProperty("title").GetString());
-        Assert.Empty(schema.GetProperty("paths").EnumerateObject());
-        Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsJsonAsync("/api/orders", new { })).StatusCode);
+        Assert.True(schema.GetProperty("paths").GetProperty("/api/orders").TryGetProperty("post", out _));
+        Assert.True(schema.GetProperty("paths").GetProperty("/api/orders/{id}").TryGetProperty("get", out _));
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/orders", new { })).StatusCode);
     }
 }

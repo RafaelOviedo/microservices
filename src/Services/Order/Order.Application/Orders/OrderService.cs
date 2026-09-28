@@ -1,0 +1,44 @@
+using AutoMapper;
+using FluentValidation;
+using Order.Application.Abstractions;
+using Order.Application.Exceptions;
+using Order.Domain.Exceptions;
+using Order.Domain.Orders;
+using Order.Domain.ValueObjects;
+using OrderEntity = Order.Domain.Orders.Order;
+
+namespace Order.Application.Orders;
+
+public sealed class OrderService(IOrderRepository repository, ICustomerClient customers, IProductClient products,
+    IValidator<CreateOrderRequest> validator, IMapper mapper, TimeProvider clock) : IOrderService
+{
+    public async Task<CreateOrderResponse> CreateAsync(CreateOrderRequest request, CancellationToken cancellationToken)
+    {
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
+        var customer = await customers.GetByIdAsync(request.CustomerId, cancellationToken)
+            ?? throw new ReferencedResourceNotFoundException("cliente", request.CustomerId);
+        var lines = new List<OrderItem>();
+        var adjustments = new List<QuantityAdjustment>();
+        foreach (var requested in request.Items!)
+        {
+            var item = requested!;
+            var product = await products.GetByIdAsync(item.ProductId, cancellationToken)
+                ?? throw new ReferencedResourceNotFoundException("producto", item.ProductId);
+            var accepted = Math.Min(item.Quantity, product.Stock);
+            if (accepted != item.Quantity) adjustments.Add(new(product.Id, item.Quantity, accepted));
+            if (accepted > 0) lines.Add(OrderItem.Create(product.Id, product.Name, Money.From(product.Price), accepted));
+        }
+        if (lines.Count == 0) throw new DomainValidationException("Ningún producto solicitado tiene stock disponible.");
+        var order = OrderEntity.Create(CustomerSnapshot.From(customer.Id, customer.Name), lines, clock.GetUtcNow());
+        // El bloque 3 confirmará y descontará stock. Esta orden permanece pendiente.
+        repository.Add(order);
+        await repository.SaveChangesAsync(cancellationToken);
+        return new CreateOrderResponse(mapper.Map<OrderResponse>(order), adjustments);
+    }
+
+    public async Task<OrderResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var order = await repository.GetByIdAsync(id, cancellationToken) ?? throw new OrderNotFoundException(id);
+        return mapper.Map<OrderResponse>(order);
+    }
+}

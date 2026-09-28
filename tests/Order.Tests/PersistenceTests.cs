@@ -29,6 +29,7 @@ public sealed class PersistenceTests(OrderApiFactory factory) : IClassFixture<Or
         Assert.Equal(original.OrderedAtUtc, loaded.OrderedAtUtc);
         Assert.Equal(54.68m, loaded.Total.Amount);
         Assert.Equal(original.Version, loaded.Version);
+        Assert.Equal(OrderStatus.PendingStockConfirmation, loaded.Status);
         Assert.Equal(2, loaded.Items.Count);
         foreach (var item in original.Items)
         {
@@ -41,7 +42,7 @@ public sealed class PersistenceTests(OrderApiFactory factory) : IClassFixture<Or
             Assert.Equal(item.Subtotal, stored.Subtotal);
         }
         var db = readScope.ServiceProvider.GetRequiredService<OrderDbContext>();
-        Assert.Single(await db.Database.GetAppliedMigrationsAsync());
+        Assert.Equal(2, (await db.Database.GetAppliedMigrationsAsync()).Count());
         Assert.Empty(await db.Database.GetPendingMigrationsAsync());
     }
 

@@ -27,8 +27,10 @@ builder.Services.AddSerilog((services, configuration) => configuration
         retainedFileCountLimit: 14,
         shared: true,
         outputTemplate: "{Timestamp:O} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"));
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(connectionString);
+builder.Services.AddApplication(builder.Configuration["AutoMapper:LicenseKey"]);
+builder.Services.AddInfrastructure(connectionString,
+    builder.Configuration["Services:Customer:BaseUrl"] ?? "http://localhost:5002",
+    builder.Configuration["Services:Product:BaseUrl"] ?? "http://localhost:5001");
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
     context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
@@ -50,7 +52,7 @@ builder.Services.AddSwaggerGen(options => options.SwaggerDoc("v1", new()
 {
     Title = "Order API",
     Version = "v1",
-    Description = "Base del servicio de órdenes. Los endpoints de negocio se incorporarán en los siguientes bloques."
+    Description = "Creación de órdenes pendientes de confirmar stock, con datos obtenidos por HTTP desde Customer y Product."
 }));
 builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("postgresql", tags: ["ready"]);
 

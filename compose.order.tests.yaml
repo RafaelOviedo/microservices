@@ -7,6 +7,8 @@ services:
       POSTGRES_USER: order_test
       POSTGRES_PASSWORD: order_test_password
       POSTGRES_DB: order_test
+    volumes:
+      - ./docker/postgres/init-order-tests.sql:/docker-entrypoint-initdb.d/10-services.sql:ro
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:
@@ -14,6 +16,46 @@ services:
       interval: 2s
       timeout: 5s
       retries: 20
+    networks:
+      - tests-net
+
+  product-api-tests:
+    build:
+      context: .
+      dockerfile: src/Services/Product/Product.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Testing
+      ASPNETCORE_HTTP_PORTS: 8080
+      Database__ApplyMigrationsOnStartup: "true"
+      ConnectionStrings__ProductDb: "Host=postgres-tests;Database=product_test;Username=order_test;Password=order_test_password"
+    depends_on:
+      postgres-tests:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health/ready"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    networks:
+      - tests-net
+
+  customer-api-tests:
+    build:
+      context: .
+      dockerfile: src/Services/Customer/Customer.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Testing
+      ASPNETCORE_HTTP_PORTS: 8080
+      Database__ApplyMigrationsOnStartup: "true"
+      ConnectionStrings__CustomerDb: "Host=postgres-tests;Database=customer_test;Username=order_test;Password=order_test_password"
+    depends_on:
+      postgres-tests:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health/ready"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
     networks:
       - tests-net
 
@@ -26,10 +68,18 @@ services:
     environment:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
+      Services__Customer__BaseUrl: http://customer-api-tests:8080
+      Services__Product__BaseUrl: http://product-api-tests:8080
+      ORDER_INTEGRATION_CUSTOMER_URL: http://customer-api-tests:8080
+      ORDER_INTEGRATION_PRODUCT_URL: http://product-api-tests:8080
       ORDER_TEST_CONNECTION: "Host=postgres-tests;Database=order_test;Username=order_test;Password=order_test_password"
       ConnectionStrings__OrderDb: "Host=postgres-tests;Database=order_test;Username=order_test;Password=order_test_password"
       Database__ApplyMigrationsOnStartup: "true"
     depends_on:
+      product-api-tests:
+        condition: service_healthy
+      customer-api-tests:
+        condition: service_healthy
       postgres-tests:
         condition: service_healthy
     command: ["dotnet", "test", "tests/Order.Tests/Order.Tests.csproj", "--configuration", "Release", "--logger", "console;verbosity=normal"]

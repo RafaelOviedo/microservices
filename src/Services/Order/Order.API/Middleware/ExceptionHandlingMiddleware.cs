@@ -55,6 +55,15 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         {
             Status = StatusCodes.Status400BadRequest, Title = "Regla de negocio inválida.", Detail = exception.Message
         },
+        OrderNotFoundException or ReferencedResourceNotFoundException => new ProblemDetails
+        {
+            Status = StatusCodes.Status404NotFound, Title = "Recurso no encontrado.", Detail = exception.Message
+        },
+        UpstreamServiceException upstream => new ProblemDetails
+        {
+            Status = upstream.IsTimeout ? StatusCodes.Status504GatewayTimeout : StatusCodes.Status502BadGateway,
+            Title = "No se pudo consultar un servicio requerido.", Detail = upstream.Message
+        },
         ConcurrencyConflictException => new ProblemDetails
         {
             Status = StatusCodes.Status409Conflict, Title = "Conflicto de actualización.", Detail = exception.Message
