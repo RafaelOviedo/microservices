@@ -70,6 +70,64 @@ services:
     networks:
       - microservices-net
 
+  customer-db-init:
+    image: postgres:17-bookworm
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD en .env}
+      CUSTOMER_DB_PASSWORD: ${CUSTOMER_DB_PASSWORD:?Definir CUSTOMER_DB_PASSWORD en .env}
+    volumes:
+      - ./docker/postgres/init-customer.sh:/scripts/init-customer.sh:ro
+    entrypoint: ["bash", "/scripts/init-customer.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  customer-api:
+    build:
+      context: .
+      dockerfile: src/Services/Customer/Customer.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080
+      Database__ApplyMigrationsOnStartup: "true"
+      AutoMapper__LicenseKey: ${AUTOMAPPER_LICENSE_KEY:-}
+      ConnectionStrings__CustomerDb: "Host=postgres;Port=5432;Database=customer_db;Username=customer_user;Password=${CUSTOMER_DB_PASSWORD:?Definir CUSTOMER_DB_PASSWORD en .env}"
+    ports:
+      - "127.0.0.1:${CUSTOMER_API_PORT:-5002}:8080"
+    volumes:
+      - customer-logs:/app/logs
+    depends_on:
+      customer-db-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - microservices-net
+
+  customer-tools:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    profiles: ["tools"]
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - nuget-packages:/root/.nuget/packages
+    environment:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      ConnectionStrings__CustomerDb: "Host=postgres;Port=5432;Database=customer_db;Username=customer_user;Password=${CUSTOMER_DB_PASSWORD:?Definir CUSTOMER_DB_PASSWORD en .env}"
+    command: ["dotnet", "--info"]
+    networks:
+      - microservices-net
+
 networks:
   microservices-net:
     driver: bridge
@@ -78,3 +136,4 @@ volumes:
   postgres-data:
   nuget-packages:
   product-logs:
+  customer-logs:
