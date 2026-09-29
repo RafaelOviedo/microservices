@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Product.Domain.Stock;
 using ProductEntity = Product.Domain.Products.Product;
 
 namespace Product.Infrastructure.Persistence;
@@ -6,6 +7,7 @@ namespace Product.Infrastructure.Persistence;
 public sealed class ProductDbContext(DbContextOptions<ProductDbContext> options, TimeProvider clock)
     : DbContext(options)
 {
+    public DbSet<StockOperation> StockOperations => Set<StockOperation>();
     public DbSet<ProductEntity> Products => Set<ProductEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

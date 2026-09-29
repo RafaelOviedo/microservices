@@ -42,7 +42,7 @@ public sealed class PersistenceTests(OrderApiFactory factory) : IClassFixture<Or
             Assert.Equal(item.Subtotal, stored.Subtotal);
         }
         var db = readScope.ServiceProvider.GetRequiredService<OrderDbContext>();
-        Assert.Equal(2, (await db.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(3, (await db.Database.GetAppliedMigrationsAsync()).Count());
         Assert.Empty(await db.Database.GetPendingMigrationsAsync());
     }
 

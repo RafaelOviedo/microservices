@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Order.API.Health;
+using Order.API.Workers;
 using Order.API.Middleware;
 using Order.Application;
 using Order.Infrastructure;
@@ -31,6 +32,8 @@ builder.Services.AddApplication(builder.Configuration["AutoMapper:LicenseKey"]);
 builder.Services.AddInfrastructure(connectionString,
     builder.Configuration["Services:Customer:BaseUrl"] ?? "http://localhost:5002",
     builder.Configuration["Services:Product:BaseUrl"] ?? "http://localhost:5001");
+if (builder.Configuration.GetValue("Recovery:Enabled", true))
+    builder.Services.AddHostedService<OrderRecoveryWorker>();
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
     context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
@@ -52,7 +55,7 @@ builder.Services.AddSwaggerGen(options => options.SwaggerDoc("v1", new()
 {
     Title = "Order API",
     Version = "v1",
-    Description = "Creación de órdenes pendientes de confirmar stock, con datos obtenidos por HTTP desde Customer y Product."
+    Description = "Creación y confirmación de órdenes con stock idempotente y recuperación de operaciones pendientes."
 }));
 builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("postgresql", tags: ["ready"]);
 

@@ -30,8 +30,17 @@ public sealed class OrderDbContext(DbContextOptions<OrderDbContext> options, Tim
 
     private void ProtectHistory()
     {
-        if (ChangeTracker.Entries<OrderItem>().Any(entry => entry.State is EntityState.Deleted or EntityState.Modified))
-            throw new InvalidOperationException("Los ítems históricos no se pueden modificar ni eliminar individualmente.");
+        foreach (var entry in ChangeTracker.Entries<OrderItem>())
+        {
+            if (entry.State == EntityState.Deleted)
+                throw new InvalidOperationException("Los ítems históricos no se pueden eliminar.");
+            if (entry.State != EntityState.Modified) continue;
+            var parent = ChangeTracker.Entries<OrderEntity>().SingleOrDefault(x => x.Entity.Id == entry.Entity.OrderId);
+            if (entry.Properties.Any(property => property.IsModified && property.Metadata.Name != nameof(OrderItem.ConfirmedQuantity))
+                || parent is null || parent.Property(x => x.Status).OriginalValue != OrderStatus.Confirming
+                || parent.Entity.Status != OrderStatus.Confirmed)
+                throw new InvalidOperationException("Solo se puede registrar la cantidad confirmada durante la confirmación del agregado.");
+        }
         foreach (var entry in ChangeTracker.Entries<OrderEntity>().Where(entry => entry.State == EntityState.Deleted).ToList())
         {
             entry.CurrentValues.SetValues(entry.OriginalValues);

@@ -51,6 +51,28 @@ public sealed class Product
         Version = Guid.NewGuid();
     }
 
+    public int DeductStock(int requested, DateTimeOffset now)
+    {
+        if (IsDeleted) throw new DomainValidationException("El producto está eliminado.");
+        if (requested <= 0) throw new DomainValidationException("La cantidad debe ser positiva.");
+        var accepted = Math.Min(requested, Stock);
+        if (accepted == 0) return 0;
+        Stock -= accepted;
+        UpdatedAtUtc = NormalizeTimestamp(now);
+        Version = Guid.NewGuid();
+        return accepted;
+    }
+
+    public void RestoreStock(int quantity, DateTimeOffset now)
+    {
+        if (quantity <= 0 || Stock > int.MaxValue - quantity)
+            throw new DomainValidationException("No se puede devolver esa cantidad al stock actual.");
+        // Una compensación debe devolver stock incluso si el producto recibió una baja lógica.
+        Stock += quantity;
+        UpdatedAtUtc = NormalizeTimestamp(now);
+        Version = Guid.NewGuid();
+    }
+
     public void Delete(DateTimeOffset now)
     {
         if (IsDeleted) return;

@@ -68,6 +68,7 @@ services:
     environment:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
+      Recovery__Enabled: "false"
       Services__Customer__BaseUrl: http://customer-api-tests:8080
       Services__Product__BaseUrl: http://product-api-tests:8080
       ORDER_INTEGRATION_CUSTOMER_URL: http://customer-api-tests:8080

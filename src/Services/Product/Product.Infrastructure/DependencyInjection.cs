@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Product.Application.Abstractions;
+using Product.Application.Stock;
 using Product.Infrastructure.Persistence;
 using Product.Infrastructure.Repositories;
 
@@ -12,6 +13,7 @@ public static class DependencyInjection
     {
         services.AddDbContext<ProductDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IStockOperationService, StockOperationService>();
         return services;
     }
 }

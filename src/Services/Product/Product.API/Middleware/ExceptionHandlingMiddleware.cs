@@ -59,7 +59,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         {
             Status = StatusCodes.Status404NotFound, Title = "Producto no encontrado.", Detail = exception.Message
         },
-        ConcurrencyConflictException => new ProblemDetails
+        StockOperationConflictException or ConcurrencyConflictException => new ProblemDetails
         {
             Status = StatusCodes.Status409Conflict, Title = "Conflicto de actualización.", Detail = exception.Message
         },

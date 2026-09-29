@@ -16,6 +16,7 @@ public static class DependencyInjection
                 configuration.LicenseKey = autoMapperLicenseKey;
         }, typeof(OrderMappingProfile).Assembly);
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IOrderProcessingService, OrderProcessingService>();
         return services;
     }
 }

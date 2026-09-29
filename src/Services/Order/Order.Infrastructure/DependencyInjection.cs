@@ -13,6 +13,7 @@ public static class DependencyInjection
     {
         services.AddDbContext<OrderDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IOrderProcessingStore, OrderProcessingStore>();
         var customerUri = ParseBaseAddress(customerBaseUrl, "Customer");
         var productUri = ParseBaseAddress(productBaseUrl, "Product");
         services.AddHttpClient<ICustomerClient, CustomerClient>(client =>
@@ -21,6 +22,11 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(10);
         });
         services.AddHttpClient<IProductClient, ProductClient>(client =>
+        {
+            client.BaseAddress = productUri;
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+        services.AddHttpClient<IStockClient, StockClient>(client =>
         {
             client.BaseAddress = productUri;
             client.Timeout = TimeSpan.FromSeconds(10);

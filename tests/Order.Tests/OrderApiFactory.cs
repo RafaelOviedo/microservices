@@ -18,6 +18,7 @@ public sealed class OrderApiFactory : WebApplicationFactory<Program>
             {
                 ["ConnectionStrings:OrderDb"] = connectionString,
                 ["Database:ApplyMigrationsOnStartup"] = "true",
+                ["Recovery:Enabled"] = "false",
                 ["Logging:FilePath"] = Path.Combine(Path.GetTempPath(), "order-tests", "order-.log")
             }));
     }

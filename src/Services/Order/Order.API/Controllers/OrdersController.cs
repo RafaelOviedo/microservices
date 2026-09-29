@@ -6,7 +6,7 @@ namespace Order.API.Controllers;
 [ApiController]
 [Route("api/orders")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
-public sealed class OrdersController(IOrderService service) : ControllerBase
+public sealed class OrdersController(IOrderService service, IOrderProcessingService processing) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType<CreateOrderResponse>(StatusCodes.Status201Created)]
@@ -19,6 +19,25 @@ public sealed class OrdersController(IOrderService service) : ControllerBase
         var result = await service.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = result.Order.Id }, result);
     }
+
+    [HttpPost("{id:guid}/confirm")]
+    [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<OrderResponse>(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<OrderResponse>> Confirm(Guid id, CancellationToken cancellationToken)
+        => ProcessingResult(await processing.ConfirmAsync(id, cancellationToken));
+
+    [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<OrderResponse>(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<OrderResponse>> Cancel(Guid id, CancellationToken cancellationToken)
+        => ProcessingResult(await processing.CancelAsync(id, cancellationToken));
+
+    private ActionResult<OrderResponse> ProcessingResult(OrderResponse order)
+        => order.Status is "Confirming" or "CompensationPending"
+            ? AcceptedAtAction(nameof(GetById), new { id = order.Id }, order) : Ok(order);
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]

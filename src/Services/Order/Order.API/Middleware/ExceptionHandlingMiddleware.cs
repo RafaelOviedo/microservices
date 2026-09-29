@@ -64,7 +64,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
             Status = upstream.IsTimeout ? StatusCodes.Status504GatewayTimeout : StatusCodes.Status502BadGateway,
             Title = "No se pudo consultar un servicio requerido.", Detail = upstream.Message
         },
-        ConcurrencyConflictException => new ProblemDetails
+        OrderStateConflictException or ConcurrencyConflictException => new ProblemDetails
         {
             Status = StatusCodes.Status409Conflict, Title = "Conflicto de actualización.", Detail = exception.Message
         },

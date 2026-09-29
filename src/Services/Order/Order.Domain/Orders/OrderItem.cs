@@ -12,6 +12,7 @@ public sealed class OrderItem
     public string ProductName { get; private set; } = string.Empty;
     public Money UnitPrice { get; private set; } = null!;
     public int Quantity { get; private set; }
+    public int? ConfirmedQuantity { get; private set; }
     public Money Subtotal { get; private set; } = null!;
 
     private OrderItem() { }
@@ -28,6 +29,12 @@ public sealed class OrderItem
             Id = Guid.NewGuid(), ProductId = productId, ProductName = productName.Trim(),
             UnitPrice = unitPrice, Quantity = quantity, Subtotal = Money.From(unitPrice.Amount * quantity)
         };
+    }
+
+    internal void ConfirmQuantity(int quantity)
+    {
+        if (quantity < 0 || quantity > Quantity) throw new DomainValidationException("Cantidad confirmada inválida.");
+        ConfirmedQuantity = quantity;
     }
 
     // Cada agregado conserva instancias propias; una línea de entrada no se comparte entre órdenes.

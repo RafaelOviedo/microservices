@@ -30,7 +30,7 @@ public sealed class OrderService(IOrderRepository repository, ICustomerClient cu
         }
         if (lines.Count == 0) throw new DomainValidationException("Ningún producto solicitado tiene stock disponible.");
         var order = OrderEntity.Create(CustomerSnapshot.From(customer.Id, customer.Name), lines, clock.GetUtcNow());
-        // El bloque 3 confirmará y descontará stock. Esta orden permanece pendiente.
+        // La confirmación explícita descuenta stock; la creación conserva el estado pendiente.
         repository.Add(order);
         await repository.SaveChangesAsync(cancellationToken);
         return new CreateOrderResponse(mapper.Map<OrderResponse>(order), adjustments);
