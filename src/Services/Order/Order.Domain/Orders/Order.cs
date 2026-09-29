@@ -25,13 +25,13 @@ public sealed class Order
 
     public static Order Create(CustomerSnapshot customer, IEnumerable<OrderItem> items, DateTimeOffset now)
     {
-        if (customer is null) throw new DomainValidationException("El cliente es obligatorio.");
-        if (items is null) throw new DomainValidationException("Los ítems son obligatorios.");
+        if (customer is null) throw new DomainValidationException("The customer is required.");
+        if (items is null) throw new DomainValidationException("Items are required.");
         var lines = items.ToList();
-        if (lines.Count == 0) throw new DomainValidationException("La orden debe contener al menos un ítem.");
-        if (lines.Any(item => item is null)) throw new DomainValidationException("Los ítems no pueden ser nulos.");
+        if (lines.Count == 0) throw new DomainValidationException("The order must contain at least one item.");
+        if (lines.Any(item => item is null)) throw new DomainValidationException("Items cannot be null.");
         if (lines.Select(item => item.ProductId).Distinct().Count() != lines.Count)
-            throw new DomainValidationException("Cada producto debe aparecer en una única línea de la orden.");
+            throw new DomainValidationException("Each product must appear in exactly one order line.");
         decimal total = 0;
         foreach (var item in lines) total = Money.From(total + item.Subtotal.Amount).Amount;
         var order = new Order
@@ -46,7 +46,7 @@ public sealed class Order
     public void BeginConfirmation(DateTimeOffset now)
     {
         if (Status != OrderStatus.PendingStockConfirmation) return;
-        if (IsDeleted) throw new DomainValidationException("La orden está eliminada.");
+        if (IsDeleted) throw new DomainValidationException("The order has been deleted.");
         Status = OrderStatus.Confirming;
         NextAttemptAtUtc = NormalizeTimestamp(now);
         Version = Guid.NewGuid();
@@ -54,7 +54,7 @@ public sealed class Order
 
     public void BeginCompensation(string reason, DateTimeOffset now)
     {
-        if (Status == OrderStatus.Confirmed) throw new DomainValidationException("No se puede cancelar una orden confirmada.");
+        if (Status == OrderStatus.Confirmed) throw new DomainValidationException("A confirmed order cannot be cancelled.");
         if (Status is OrderStatus.Cancelled or OrderStatus.CompensationPending) return;
         Status = OrderStatus.CompensationPending;
         FailureReason = reason;
@@ -64,9 +64,9 @@ public sealed class Order
 
     public void Confirm(IReadOnlyDictionary<Guid, int> quantities, DateTimeOffset now)
     {
-        if (Status != OrderStatus.Confirming) throw new DomainValidationException("La orden no está en confirmación.");
+        if (Status != OrderStatus.Confirming) throw new DomainValidationException("The order is not being confirmed.");
         if (quantities.Count != _items.Count || _items.Any(item => !quantities.TryGetValue(item.ProductId, out var quantity)
-            || quantity < 0 || quantity > item.Quantity)) throw new DomainValidationException("Asignación de stock inválida.");
+            || quantity < 0 || quantity > item.Quantity)) throw new DomainValidationException("Invalid stock allocation.");
         var total = Money.From(_items.Sum(item => item.UnitPrice.Amount * quantities[item.ProductId]));
         foreach (var item in _items) item.ConfirmQuantity(quantities[item.ProductId]);
         Total = total;
@@ -77,7 +77,7 @@ public sealed class Order
 
     public void Reject(string reason)
     {
-        if (Status != OrderStatus.Confirming) throw new DomainValidationException("La orden no está en confirmación.");
+        if (Status != OrderStatus.Confirming) throw new DomainValidationException("The order is not being confirmed.");
         Status = OrderStatus.Rejected;
         FailureReason = reason;
         Finish();
@@ -85,7 +85,7 @@ public sealed class Order
 
     public void CompleteCompensation()
     {
-        if (Status != OrderStatus.CompensationPending) throw new DomainValidationException("No hay compensación pendiente.");
+        if (Status != OrderStatus.CompensationPending) throw new DomainValidationException("There is no pending compensation.");
         Status = OrderStatus.Cancelled;
         Finish();
     }
@@ -110,7 +110,7 @@ public sealed class Order
     {
         if (IsDeleted) return;
         if (Status is OrderStatus.Confirming or OrderStatus.CompensationPending)
-            throw new DomainValidationException("La operación de stock debe finalizar antes de dar de baja la orden.");
+            throw new DomainValidationException("The stock operation must finish before the order can be soft deleted.");
         IsDeleted = true;
         DeletedAtUtc = NormalizeTimestamp(now);
         Version = Guid.NewGuid();

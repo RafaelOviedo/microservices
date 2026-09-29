@@ -8,13 +8,13 @@ public sealed class CreateOrderRequestValidator : AbstractValidator<CreateOrderR
 
     public CreateOrderRequestValidator()
     {
-        RuleFor(x => x.CustomerId).NotEmpty().WithMessage("El ID del cliente es obligatorio.");
+        RuleFor(x => x.CustomerId).NotEmpty().WithMessage("The customer ID is required.");
         RuleFor(x => x.Items).Cascade(CascadeMode.Stop)
-            .NotEmpty().WithMessage("La orden debe contener al menos un ítem.")
-            .Must(items => items!.Count <= MaximumItems).WithMessage("La orden admite hasta 100 productos.")
+            .NotEmpty().WithMessage("The order must contain at least one item.")
+            .Must(items => items!.Count <= MaximumItems).WithMessage("The order can contain at most 100 products.")
             .Must(items => items is null || items.Where(item => item is not null).Select(item => item!.ProductId).Distinct().Count()
-                == items.Count(item => item is not null)).WithMessage("Cada producto debe aparecer una sola vez.");
-        RuleForEach(x => x.Items).NotNull().WithMessage("Los ítems no pueden ser nulos.");
+                == items.Count(item => item is not null)).WithMessage("Each product must appear only once.");
+        RuleForEach(x => x.Items).NotNull().WithMessage("Items cannot be null.");
         RuleForEach(x => x.Items).SetValidator(new OrderItemRequestValidator()!);
     }
 }
@@ -23,7 +23,7 @@ public sealed class OrderItemRequestValidator : AbstractValidator<OrderItemReque
 {
     public OrderItemRequestValidator()
     {
-        RuleFor(x => x.ProductId).NotEmpty().WithMessage("El ID del producto es obligatorio.");
-        RuleFor(x => x.Quantity).GreaterThan(0).WithMessage("La cantidad debe ser mayor que cero.");
+        RuleFor(x => x.ProductId).NotEmpty().WithMessage("The product ID is required.");
+        RuleFor(x => x.Quantity).GreaterThan(0).WithMessage("The quantity must be greater than zero.");
     }
 }

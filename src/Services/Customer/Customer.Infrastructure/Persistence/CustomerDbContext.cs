@@ -30,8 +30,8 @@ public sealed class CustomerDbContext(DbContextOptions<CustomerDbContext> option
     {
         foreach (var entry in ChangeTracker.Entries<CustomerEntity>().Where(x => x.State == EntityState.Deleted).ToList())
         {
-            // Incluso Remove/RemoveRange deben conservar el registro. Solo actualizar los campos del borrado.
-            // Descartar cambios pendientes: una baja no debe guardar ediciones ajenas al borrado.
+            // Even Remove/RemoveRange must preserve the record. Only update the soft delete fields.
+            // Discard pending changes: a soft delete must not persist unrelated edits.
             entry.CurrentValues.SetValues(entry.OriginalValues);
             entry.State = EntityState.Unchanged;
             entry.Entity.Delete(clock.GetUtcNow());

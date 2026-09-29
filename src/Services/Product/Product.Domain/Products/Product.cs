@@ -39,9 +39,9 @@ public sealed class Product
     public void Update(string name, string description, Money price, int stock, DateTimeOffset now)
     {
         if (IsDeleted)
-            throw new DomainValidationException("No se puede modificar un producto eliminado.");
+            throw new DomainValidationException("A deleted product cannot be modified.");
 
-        // Validar antes de modificar el agregado evita cambios parciales en memoria.
+        // Validate before modifying the aggregate to avoid partial changes in memory.
         Validate(name, description, price, stock);
         Name = name.Trim();
         Description = description.Trim();
@@ -53,8 +53,8 @@ public sealed class Product
 
     public int DeductStock(int requested, DateTimeOffset now)
     {
-        if (IsDeleted) throw new DomainValidationException("El producto está eliminado.");
-        if (requested <= 0) throw new DomainValidationException("La cantidad debe ser positiva.");
+        if (IsDeleted) throw new DomainValidationException("The product has been deleted.");
+        if (requested <= 0) throw new DomainValidationException("The quantity must be positive.");
         var accepted = Math.Min(requested, Stock);
         if (accepted == 0) return 0;
         Stock -= accepted;
@@ -66,8 +66,8 @@ public sealed class Product
     public void RestoreStock(int quantity, DateTimeOffset now)
     {
         if (quantity <= 0 || Stock > int.MaxValue - quantity)
-            throw new DomainValidationException("No se puede devolver esa cantidad al stock actual.");
-        // Una compensación debe devolver stock incluso si el producto recibió una baja lógica.
+            throw new DomainValidationException("This quantity cannot be restored to the current stock.");
+        // Compensation must restore stock even if the product has been soft deleted.
         Stock += quantity;
         UpdatedAtUtc = NormalizeTimestamp(now);
         Version = Guid.NewGuid();
@@ -82,7 +82,7 @@ public sealed class Product
         Version = Guid.NewGuid();
     }
 
-    // Usar microsegundos mantiene las fechas idénticas al persistirlas y volver a leerlas.
+    // Use microsecond precision to preserve timestamps when saving and reading them back.
     private static DateTimeOffset NormalizeTimestamp(DateTimeOffset now)
     {
         var utc = now.ToUniversalTime();
@@ -92,12 +92,12 @@ public sealed class Product
     private static void Validate(string name, string description, Money price, int stock)
     {
         if (string.IsNullOrWhiteSpace(name) || name.Length > NameMaxLength)
-            throw new DomainValidationException($"El nombre es obligatorio y admite hasta {NameMaxLength} caracteres.");
+            throw new DomainValidationException($"The name is required and must not exceed {NameMaxLength} characters.");
         if (string.IsNullOrWhiteSpace(description) || description.Length > DescriptionMaxLength)
-            throw new DomainValidationException($"La descripción es obligatoria y admite hasta {DescriptionMaxLength} caracteres.");
+            throw new DomainValidationException($"The description is required and must not exceed {DescriptionMaxLength} characters.");
         if (price is null)
-            throw new DomainValidationException("El precio es obligatorio.");
+            throw new DomainValidationException("The price is required.");
         if (stock < 0)
-            throw new DomainValidationException("El stock no puede ser negativo.");
+            throw new DomainValidationException("Stock cannot be negative.");
     }
 }

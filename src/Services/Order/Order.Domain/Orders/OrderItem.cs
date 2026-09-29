@@ -19,11 +19,11 @@ public sealed class OrderItem
 
     public static OrderItem Create(Guid productId, string productName, Money unitPrice, int quantity)
     {
-        if (productId == Guid.Empty) throw new DomainValidationException("El ID del producto es obligatorio.");
+        if (productId == Guid.Empty) throw new DomainValidationException("The product ID is required.");
         if (string.IsNullOrWhiteSpace(productName) || productName.Length > ProductNameMaxLength)
-            throw new DomainValidationException("El nombre del producto es obligatorio y admite hasta 200 caracteres.");
-        if (unitPrice is null) throw new DomainValidationException("El precio unitario es obligatorio.");
-        if (quantity <= 0) throw new DomainValidationException("La cantidad debe ser mayor que cero.");
+            throw new DomainValidationException("The product name is required and must not exceed 200 characters.");
+        if (unitPrice is null) throw new DomainValidationException("The unit price is required.");
+        if (quantity <= 0) throw new DomainValidationException("The quantity must be greater than zero.");
         return new OrderItem
         {
             Id = Guid.NewGuid(), ProductId = productId, ProductName = productName.Trim(),
@@ -33,11 +33,11 @@ public sealed class OrderItem
 
     internal void ConfirmQuantity(int quantity)
     {
-        if (quantity < 0 || quantity > Quantity) throw new DomainValidationException("Cantidad confirmada inválida.");
+        if (quantity < 0 || quantity > Quantity) throw new DomainValidationException("Invalid confirmed quantity.");
         ConfirmedQuantity = quantity;
     }
 
-    // Cada agregado conserva instancias propias; una línea de entrada no se comparte entre órdenes.
+    // Each aggregate owns its instances; input lines are not shared between orders.
     internal OrderItem CopyForOrder(Guid orderId)
     {
         var copy = Create(ProductId, ProductName, UnitPrice, Quantity);

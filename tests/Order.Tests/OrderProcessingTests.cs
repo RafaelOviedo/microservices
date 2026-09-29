@@ -241,7 +241,7 @@ public sealed class OrderProcessingTests(OrderApiFactory factory) : IClassFixtur
             if (order.Status == status) return order;
             await Task.Delay(200);
         }
-        throw new TimeoutException($"No se recuperó la orden {id} a {status}.");
+        throw new TimeoutException($"Order {id} did not recover to {status}.");
     }
 
     private sealed class FaultPlan { public int ApplyLoss; public int CancelLoss; }
@@ -266,7 +266,7 @@ public sealed class OrderProcessingTests(OrderApiFactory factory) : IClassFixtur
             InterceptionResult<int> result, CancellationToken cancellationToken = default)
         {
             if (eventData.Context!.ChangeTracker.Entries<OrderEntity>().Any(entry => entry.State == EntityState.Modified && entry.Entity.Status == OrderStatus.Confirmed))
-                throw new InvalidOperationException("Fallo de persistencia simulado después del descuento remoto.");
+                throw new InvalidOperationException("Simulated persistence failure after the remote stock deduction.");
             return base.SavingChangesAsync(eventData, result, cancellationToken);
         }
     }

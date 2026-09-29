@@ -11,8 +11,8 @@ public sealed class OrderHistoryQueryValidator : AbstractValidator<OrderHistoryQ
         RuleFor(query => query.CustomerId).NotEqual(Guid.Empty).When(query => query.CustomerId.HasValue);
         RuleFor(query => query.Status).IsInEnum().When(query => query.Status.HasValue);
         RuleFor(query => query.To).Must((query, to) => !query.From.HasValue || !to.HasValue || to >= query.From)
-            .WithMessage("La fecha final debe ser igual o posterior a la inicial.");
+            .WithMessage("The end date must be on or after the start date.");
         RuleFor(query => query.Page).Must((query, page) => ((long)page - 1) * query.PageSize <= int.MaxValue)
-            .WithMessage("La página solicitada excede el rango admitido.");
+            .WithMessage("The requested page exceeds the supported range.");
     }
 }

@@ -27,7 +27,7 @@ public sealed class OrderRepository(OrderDbContext dbContext) : IOrderRepository
             var utc = to.ToUniversalTime();
             orders = orders.Where(order => order.OrderedAtUtc <= utc);
         }
-        // Una misma instantánea para el conteo y la página, incluso si se crean o confirman órdenes en paralelo.
+        // Use the same snapshot for the count and page, even when orders are created or confirmed concurrently.
         await using var transaction = await dbContext.Database.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, cancellationToken);
         var totalCount = await orders.CountAsync(cancellationToken);
         var items = await orders.OrderByDescending(order => order.OrderedAtUtc).ThenByDescending(order => order.Id)

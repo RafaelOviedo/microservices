@@ -11,7 +11,7 @@ public sealed class OrderApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var connectionString = Environment.GetEnvironmentVariable("ORDER_TEST_CONNECTION")
-            ?? throw new InvalidOperationException("Las pruebas de integración requieren PostgreSQL de pruebas. Usá compose.order.tests.yaml.");
+            ?? throw new InvalidOperationException("Integration tests require a test PostgreSQL instance. Use compose.order.tests.yaml.");
         builder.UseEnvironment("Testing");
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
             new Dictionary<string, string?>

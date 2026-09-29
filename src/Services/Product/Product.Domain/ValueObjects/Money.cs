@@ -12,9 +12,9 @@ public sealed record Money
     public static Money From(decimal amount)
     {
         if (amount <= 0 || amount > MaximumAmount)
-            throw new DomainValidationException("El precio debe ser positivo y no superar 9999999999999999.99.");
+            throw new DomainValidationException("The price must be positive and must not exceed 9999999999999999.99.");
         if (decimal.Round(amount, 2) != amount)
-            throw new DomainValidationException("El precio admite hasta dos decimales.");
+            throw new DomainValidationException("The price must have at most two decimal places.");
 
         return new Money(amount);
     }

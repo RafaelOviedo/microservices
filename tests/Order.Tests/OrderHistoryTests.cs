@@ -205,7 +205,7 @@ public sealed class OrderHistoryTests(OrderApiFactory factory) : IClassFixture<O
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Calls++;
-            throw new HttpRequestException("Los servicios externos no están disponibles en esta prueba.");
+            throw new HttpRequestException("External services are unavailable in this test.");
         }
     }
 }

@@ -11,6 +11,6 @@ public sealed class DatabaseHealthCheck(CustomerDbContext dbContext) : IHealthCh
     {
         return await dbContext.Database.CanConnectAsync(cancellationToken)
             ? HealthCheckResult.Healthy()
-            : HealthCheckResult.Unhealthy("PostgreSQL no está disponible.");
+            : HealthCheckResult.Unhealthy("PostgreSQL is unavailable.");
     }
 }

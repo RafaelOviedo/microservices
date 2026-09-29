@@ -1,3 +1,3 @@
 namespace Order.Application.Exceptions;
 
-public sealed class OrderNotFoundException(Guid id) : Exception($"No se encontró la orden {id}.");
+public sealed class OrderNotFoundException(Guid id) : Exception($"Order {id} was not found.");

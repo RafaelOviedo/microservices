@@ -18,17 +18,17 @@ public sealed record Address
 
     public static Address From(string street, string city, string state, string postalCode, string country)
     {
-        Validate(street, StreetMaxLength, "calle");
-        Validate(city, LocalityMaxLength, "ciudad");
-        Validate(state, LocalityMaxLength, "provincia");
-        Validate(postalCode, PostalCodeMaxLength, "código postal");
-        Validate(country, LocalityMaxLength, "país");
+        Validate(street, StreetMaxLength, "street");
+        Validate(city, LocalityMaxLength, "city");
+        Validate(state, LocalityMaxLength, "state");
+        Validate(postalCode, PostalCodeMaxLength, "postal code");
+        Validate(country, LocalityMaxLength, "country");
         return new Address(street.Trim(), city.Trim(), state.Trim(), postalCode.Trim(), country.Trim());
     }
 
     private static void Validate(string value, int maximum, string field)
     {
         if (string.IsNullOrWhiteSpace(value) || value.Length > maximum)
-            throw new DomainValidationException($"El campo {field} es obligatorio y admite hasta {maximum} caracteres.");
+            throw new DomainValidationException($"The {field} field is required and must not exceed {maximum} characters.");
     }
 }

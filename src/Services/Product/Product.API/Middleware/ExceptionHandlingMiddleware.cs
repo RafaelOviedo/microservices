@@ -18,7 +18,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
         {
-            // El cliente canceló la solicitud; ya no hay una respuesta que enviar.
+            // The client cancelled the request; there is no response left to send.
         }
         catch (Exception exception)
         {
@@ -28,10 +28,10 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
             problem.Instance = context.Request.Path;
             problem.Extensions["traceId"] = context.TraceIdentifier;
             if (problem.Status >= 500)
-                logger.LogError(exception, "Error no controlado en {Method} {Path}; TraceId {TraceId}",
+                logger.LogError(exception, "Unhandled error in {Method} {Path}; TraceId {TraceId}",
                     context.Request.Method, context.Request.Path, context.TraceIdentifier);
             else
-                logger.LogWarning("Solicitud rechazada: {ErrorType}; TraceId {TraceId}",
+                logger.LogWarning("Request rejected: {ErrorType}; TraceId {TraceId}",
                     exception.GetType().Name, context.TraceIdentifier);
 
             context.Response.Clear();
@@ -49,25 +49,25 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
             .ToDictionary(group => group.Key, group => group.Select(error => error.ErrorMessage).Distinct().ToArray()))
         {
             Status = StatusCodes.Status400BadRequest,
-            Title = "Los datos enviados no son válidos."
+            Title = "The submitted data is invalid."
         },
         DomainValidationException => new ProblemDetails
         {
-            Status = StatusCodes.Status400BadRequest, Title = "Regla de negocio inválida.", Detail = exception.Message
+            Status = StatusCodes.Status400BadRequest, Title = "Business rule violation.", Detail = exception.Message
         },
         ProductNotFoundException => new ProblemDetails
         {
-            Status = StatusCodes.Status404NotFound, Title = "Producto no encontrado.", Detail = exception.Message
+            Status = StatusCodes.Status404NotFound, Title = "Product not found.", Detail = exception.Message
         },
         StockOperationConflictException or ConcurrencyConflictException => new ProblemDetails
         {
-            Status = StatusCodes.Status409Conflict, Title = "Conflicto de actualización.", Detail = exception.Message
+            Status = StatusCodes.Status409Conflict, Title = "Update conflict.", Detail = exception.Message
         },
         _ => new ProblemDetails
         {
             Status = StatusCodes.Status500InternalServerError,
-            Title = "Error interno del servidor.",
-            Detail = "No se pudo completar la operación. Usá el traceId para identificar el error."
+            Title = "Internal server error.",
+            Detail = "The operation could not be completed. Use the traceId to identify the error."
         }
     };
 }

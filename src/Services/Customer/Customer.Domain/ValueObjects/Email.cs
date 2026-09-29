@@ -20,7 +20,7 @@ public sealed record Email
 
     public static Email From(string value)
     {
-        if (!IsValid(value)) throw new DomainValidationException("El email debe ser válido y admite hasta 254 caracteres.");
+        if (!IsValid(value)) throw new DomainValidationException("The email address must be valid and must not exceed 254 characters.");
         return new Email(value.Trim().ToLowerInvariant());
     }
 }

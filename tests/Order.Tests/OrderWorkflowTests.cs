@@ -19,7 +19,7 @@ public sealed class OrderWorkflowTests(OrderApiFactory factory) : IClassFixture<
     private static HttpClient Remote(string variable) => new()
     {
         BaseAddress = new Uri(Environment.GetEnvironmentVariable(variable)
-            ?? throw new InvalidOperationException("Usá compose.order.tests.yaml para ejecutar la integración."))
+            ?? throw new InvalidOperationException("Use compose.order.tests.yaml to run the integration tests."))
     };
     private static object CustomerRequest(string name) => new
     {
@@ -88,7 +88,7 @@ public sealed class OrderWorkflowTests(OrderApiFactory factory) : IClassFixture<
         Assert.Equal(new OrderItemResponse(limited, "Teclado original", 12.34m, 2, 24.68m), created.Order.Items.Single(x => x.ProductId == limited));
         Assert.NotNull(response.Headers.Location);
         Assert.EndsWith($"/api/orders/{created.Order.Id}", response.Headers.Location!.ToString());
-        // Bloque 2 no modifica stock: una orden pendiente todavía no es una compra confirmada.
+        // Creating a pending order does not modify stock; the purchase is not yet confirmed.
         Assert.Equal(2, (await products.GetFromJsonAsync<JsonElement>($"/api/products/{limited}")).GetProperty("stock").GetInt32());
         var productUpdate = await products.PutAsJsonAsync($"/api/products/{limited}", new { name = "Nombre nuevo", description = "Nueva", price = 99m, stock = 100 });
         Assert.Equal(HttpStatusCode.OK, productUpdate.StatusCode);
@@ -152,7 +152,7 @@ public sealed class OrderWorkflowTests(OrderApiFactory factory) : IClassFixture<
     [MemberData(nameof(InvalidRequests))]
     public async Task InvalidRequestsNeverCallDependenciesOrSave(CreateOrderRequest request)
     {
-        var handler = new StubHandler(_ => throw new InvalidOperationException("HTTP no debe ejecutarse"));
+        var handler = new StubHandler(_ => throw new InvalidOperationException("No HTTP requests should be made"));
         using var configured = WithHandler(handler);
         using var client = configured.CreateClient();
         var before = await OrderCount();
@@ -225,7 +225,7 @@ public sealed class OrderWorkflowTests(OrderApiFactory factory) : IClassFixture<
     [Fact]
     public async Task GetMissingOrSoftDeletedOrderReturns404WithoutRemoteCalls()
     {
-        var handler = new StubHandler(_ => throw new InvalidOperationException("HTTP no debe ejecutarse"));
+        var handler = new StubHandler(_ => throw new InvalidOperationException("No HTTP requests should be made"));
         using var configured = WithHandler(handler);
         using var client = configured.CreateClient();
         await AssertProblem(await client.GetAsync($"/api/orders/{Guid.NewGuid()}"), HttpStatusCode.NotFound);

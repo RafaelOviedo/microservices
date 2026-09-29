@@ -16,21 +16,21 @@ public sealed class OrderService(IOrderRepository repository, ICustomerClient cu
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
         var customer = await customers.GetByIdAsync(request.CustomerId, cancellationToken)
-            ?? throw new ReferencedResourceNotFoundException("cliente", request.CustomerId);
+            ?? throw new ReferencedResourceNotFoundException("customer", request.CustomerId);
         var lines = new List<OrderItem>();
         var adjustments = new List<QuantityAdjustment>();
         foreach (var requested in request.Items!)
         {
             var item = requested!;
             var product = await products.GetByIdAsync(item.ProductId, cancellationToken)
-                ?? throw new ReferencedResourceNotFoundException("producto", item.ProductId);
+                ?? throw new ReferencedResourceNotFoundException("product", item.ProductId);
             var accepted = Math.Min(item.Quantity, product.Stock);
             if (accepted != item.Quantity) adjustments.Add(new(product.Id, item.Quantity, accepted));
             if (accepted > 0) lines.Add(OrderItem.Create(product.Id, product.Name, Money.From(product.Price), accepted));
         }
-        if (lines.Count == 0) throw new DomainValidationException("Ningún producto solicitado tiene stock disponible.");
+        if (lines.Count == 0) throw new DomainValidationException("None of the requested products are in stock.");
         var order = OrderEntity.Create(CustomerSnapshot.From(customer.Id, customer.Name), lines, clock.GetUtcNow());
-        // La confirmación explícita descuenta stock; la creación conserva el estado pendiente.
+        // Explicit confirmation deducts stock; creation leaves the order pending.
         repository.Add(order);
         await repository.SaveChangesAsync(cancellationToken);
         return new CreateOrderResponse(mapper.Map<OrderResponse>(order), adjustments);

@@ -11,7 +11,7 @@ using Product.Infrastructure.Persistence;
 
 namespace Product.Infrastructure.Repositories;
 
-// La transacción y los bloqueos viven en Infrastructure; los cambios de stock pasan por el dominio.
+// Transactions and locks belong in Infrastructure; stock changes go through the domain.
 public sealed class StockOperationService(ProductDbContext db, IValidator<StockRequest> validator, TimeProvider clock)
     : IStockOperationService
 {
@@ -59,7 +59,7 @@ public sealed class StockOperationService(ProductDbContext db, IValidator<StockR
         var operation = await db.StockOperations.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (operation is null)
         {
-            // Esta marca impide que un Apply tardío descuente stock después de cancelar.
+            // This marker prevents a late Apply from deducting stock after cancellation.
             operation = StockOperation.Cancelled(id, clock.GetUtcNow());
             db.StockOperations.Add(operation);
         }
@@ -74,7 +74,7 @@ public sealed class StockOperationService(ProductDbContext db, IValidator<StockR
                 foreach (var allocation in operation.Allocations.Where(x => x.AcceptedQuantity > 0))
                 {
                     if (!products.TryGetValue(allocation.ProductId, out var product))
-                        throw new InvalidOperationException("Falta un producto necesario para compensar stock.");
+                        throw new InvalidOperationException("A product required for stock compensation is missing.");
                     product.RestoreStock(allocation.AcceptedQuantity, clock.GetUtcNow());
                 }
             }
@@ -95,7 +95,7 @@ public sealed class StockOperationService(ProductDbContext db, IValidator<StockR
         => db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({id.ToString()}, 0))", cancellationToken);
     private static void ValidateId(Guid id)
     {
-        if (id == Guid.Empty) throw new DomainValidationException("El identificador de operación es obligatorio.");
+        if (id == Guid.Empty) throw new DomainValidationException("The operation ID is required.");
     }
     private static StockOperationResponse Map(StockOperation value) => new(value.Id, value.Status.ToString(), value.Reason,
         value.Allocations.Select(x => new StockAllocationResponse(x.ProductId, x.RequestedQuantity, x.AcceptedQuantity)).ToArray());

@@ -18,7 +18,7 @@ public sealed class OrderProcessingService(IOrderProcessingStore store, IStockCl
 {
     public async Task<OrderResponse> ConfirmAsync(Guid id, CancellationToken cancellationToken)
     {
-        // Guardar la intención ANTES del primer efecto remoto permite recuperar tras un reinicio.
+        // Persist the intent BEFORE the first remote side effect to allow recovery after a restart.
         await store.ExecuteAsync(id, (order, _) => { order.BeginConfirmation(clock.GetUtcNow()); return Task.CompletedTask; }, cancellationToken);
         return await ProcessAsync(id, cancellationToken);
     }
@@ -45,7 +45,7 @@ public sealed class OrderProcessingService(IOrderProcessingStore store, IStockCl
                     if (await customers.GetByIdAsync(order.Customer.Id, token) is null)
                     {
                         order.BeginCompensation("CustomerUnavailable", clock.GetUtcNow());
-                        return; // Confirmar este estado local antes de devolver stock.
+                        return; // Commit this local state before restoring stock.
                     }
                     var lines = order.Items.Select(item => new StockLine(item.ProductId, item.Quantity, item.UnitPrice.Amount)).ToArray();
                     var applied = await stock.ApplyAsync(order.Id, lines, token);
@@ -70,7 +70,7 @@ public sealed class OrderProcessingService(IOrderProcessingStore store, IStockCl
             }
             catch (UpstreamServiceException exception)
             {
-                // Un timeout puede ocurrir después del commit remoto. Repetir el mismo ID es seguro.
+                // A timeout may occur after the remote commit. Retrying with the same ID is safe.
                 order.ScheduleRetry(exception.Message, clock.GetUtcNow());
             }
         }, cancellationToken);

@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("ProductDb");
 if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException("Falta ConnectionStrings:ProductDb. Configurá la conexión mediante variables de entorno.");
+    throw new InvalidOperationException("ConnectionStrings:ProductDb is missing. Configure the connection using environment variables.");
 
 builder.Services.AddSerilog((services, configuration) => configuration
     .ReadFrom.Configuration(builder.Configuration)
@@ -38,7 +38,7 @@ builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
         var problem = new ValidationProblemDetails(context.ModelState)
         {
             Status = StatusCodes.Status400BadRequest,
-            Title = "Los datos enviados no son válidos.",
+            Title = "The submitted data is invalid.",
             Instance = context.HttpContext.Request.Path
         };
         problem.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
@@ -56,7 +56,7 @@ builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("postgresql", t
 
 var app = builder.Build();
 
-// En Compose se habilita para el entorno local, con una sola instancia de Product.
+// Enabled in Compose for the local environment with a single Product instance.
 if (builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
 {
     await using var scope = app.Services.CreateAsyncScope();

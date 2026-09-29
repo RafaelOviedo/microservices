@@ -8,10 +8,10 @@ public sealed class CustomerRequestValidator : AbstractValidator<CustomerRequest
 {
     public CustomerRequestValidator()
     {
-        RuleFor(x => x.Name).NotEmpty().WithMessage("El nombre es obligatorio.")
-            .MaximumLength(CustomerEntity.NameMaxLength).WithMessage("El nombre admite hasta 200 caracteres.");
-        RuleFor(x => x.Email).Must(Email.IsValid).WithMessage("El email debe ser válido y admite hasta 254 caracteres.");
-        RuleFor(x => x.Address).NotNull().WithMessage("La dirección es obligatoria.");
+        RuleFor(x => x.Name).NotEmpty().WithMessage("The name is required.")
+            .MaximumLength(CustomerEntity.NameMaxLength).WithMessage("The name must not exceed 200 characters.");
+        RuleFor(x => x.Email).Must(Email.IsValid).WithMessage("The email address must be valid and must not exceed 254 characters.");
+        RuleFor(x => x.Address).NotNull().WithMessage("The address is required.");
         When(x => x.Address is not null, () => RuleFor(x => x.Address!).SetValidator(new AddressRequestValidator()));
     }
 }

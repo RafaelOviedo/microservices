@@ -23,11 +23,11 @@ public sealed class OrderRecoveryWorker(IServiceScopeFactory scopes, TimeProvide
                         await scope.ServiceProvider.GetRequiredService<IOrderProcessingService>().ProcessAsync(id, stoppingToken);
                     }
                     catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { return; }
-                    catch (Exception exception) { logger.LogError(exception, "No se pudo recuperar la orden {OrderId}", id); }
+                    catch (Exception exception) { logger.LogError(exception, "Failed to recover order {OrderId}", id); }
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { return; }
-            catch (Exception exception) { logger.LogError(exception, "No se pudieron consultar las órdenes pendientes"); }
+            catch (Exception exception) { logger.LogError(exception, "Failed to retrieve pending orders"); }
         } while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 }

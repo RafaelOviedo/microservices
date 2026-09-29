@@ -13,7 +13,7 @@ public sealed class OrderProcessingStore(OrderDbContext db) : IOrderProcessingSt
     {
         db.ChangeTracker.Clear();
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        // Serializa confirmación, cancelación y recuperación por orden, también con varias instancias.
+        // Serialize confirmation, cancellation, and recovery per order, including across multiple instances.
         await db.Database.ExecuteSqlInterpolatedAsync($"SELECT \"Id\" FROM \"Orders\" WHERE \"Id\" = {id} FOR UPDATE", cancellationToken);
         var order = await db.Orders.Include(x => x.Items).SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new OrderNotFoundException(id);

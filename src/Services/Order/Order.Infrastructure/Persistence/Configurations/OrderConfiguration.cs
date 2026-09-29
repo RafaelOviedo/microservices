@@ -28,7 +28,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<OrderEntity>
         builder.Property(order => order.Version).IsConcurrencyToken();
         builder.HasQueryFilter(order => !order.IsDeleted);
         builder.HasIndex(order => new { order.OrderedAtUtc, order.Id }).HasFilter("NOT \"IsDeleted\"");
-        // Conservar las relaciones hasta convertir Remove en una baja lógica.
+        // Preserve relationships until Remove is converted to a soft delete.
         builder.HasMany(order => order.Items).WithOne().HasForeignKey(item => item.OrderId).OnDelete(DeleteBehavior.ClientNoAction);
         builder.Navigation(order => order.Items).HasField("_items").UsePropertyAccessMode(PropertyAccessMode.Field);
     }

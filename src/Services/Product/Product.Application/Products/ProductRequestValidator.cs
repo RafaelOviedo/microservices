@@ -9,19 +9,19 @@ public sealed class ProductRequestValidator : AbstractValidator<ProductRequest>
     public ProductRequestValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("El nombre es obligatorio.")
-            .MaximumLength(ProductEntity.NameMaxLength).WithMessage("El nombre admite hasta 200 caracteres.");
+            .NotEmpty().WithMessage("The name is required.")
+            .MaximumLength(ProductEntity.NameMaxLength).WithMessage("The name must not exceed 200 characters.");
         RuleFor(x => x.Description)
-            .NotEmpty().WithMessage("La descripción es obligatoria.")
-            .MaximumLength(ProductEntity.DescriptionMaxLength).WithMessage("La descripción admite hasta 2000 caracteres.");
+            .NotEmpty().WithMessage("The description is required.")
+            .MaximumLength(ProductEntity.DescriptionMaxLength).WithMessage("The description must not exceed 2000 characters.");
         RuleFor(x => x.Price)
-            .NotNull().WithMessage("El precio es obligatorio.")
-            .GreaterThan(0m).WithMessage("El precio debe ser mayor que cero.")
-            .LessThanOrEqualTo(Money.MaximumAmount).WithMessage("El precio excede el importe máximo permitido.")
+            .NotNull().WithMessage("The price is required.")
+            .GreaterThan(0m).WithMessage("The price must be greater than zero.")
+            .LessThanOrEqualTo(Money.MaximumAmount).WithMessage("The price exceeds the maximum allowed amount.")
             .Must(value => value is null || decimal.Round(value.Value, 2) == value.Value)
-                .WithMessage("El precio admite hasta dos decimales.");
+                .WithMessage("The price must have at most two decimal places.");
         RuleFor(x => x.Stock)
-            .NotNull().WithMessage("El stock es obligatorio.")
-            .GreaterThanOrEqualTo(0).WithMessage("El stock no puede ser negativo.");
+            .NotNull().WithMessage("Stock is required.")
+            .GreaterThanOrEqualTo(0).WithMessage("Stock cannot be negative.");
     }
 }

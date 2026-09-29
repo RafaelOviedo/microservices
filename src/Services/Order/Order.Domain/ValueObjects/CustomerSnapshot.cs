@@ -12,9 +12,9 @@ public sealed record CustomerSnapshot
 
     public static CustomerSnapshot From(Guid id, string name)
     {
-        if (id == Guid.Empty) throw new DomainValidationException("El ID del cliente es obligatorio.");
+        if (id == Guid.Empty) throw new DomainValidationException("The customer ID is required.");
         if (string.IsNullOrWhiteSpace(name) || name.Length > NameMaxLength)
-            throw new DomainValidationException("El nombre del cliente es obligatorio y admite hasta 200 caracteres.");
+            throw new DomainValidationException("The customer name is required and must not exceed 200 characters.");
         return new CustomerSnapshot(id, name.Trim());
     }
 }

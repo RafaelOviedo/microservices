@@ -37,7 +37,7 @@ public static class DependencyInjection
     {
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || (uri.Scheme != "http" && uri.Scheme != "https")
             || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment) || !string.IsNullOrEmpty(uri.UserInfo))
-            throw new InvalidOperationException($"Services:{service}:BaseUrl debe ser una URL HTTP o HTTPS válida.");
+            throw new InvalidOperationException($"Services:{service}:BaseUrl must be a valid HTTP or HTTPS URL.");
         return new Uri(uri.AbsoluteUri.TrimEnd('/') + "/");
     }
 }

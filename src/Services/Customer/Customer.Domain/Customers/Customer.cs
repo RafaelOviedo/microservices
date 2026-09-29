@@ -36,9 +36,9 @@ public sealed class Customer
     public void Update(string name, Email email, Address address, DateTimeOffset now)
     {
         if (IsDeleted)
-            throw new DomainValidationException("No se puede modificar un cliente eliminado.");
+            throw new DomainValidationException("A deleted customer cannot be modified.");
 
-        // Validar antes de modificar el agregado evita cambios parciales en memoria.
+        // Validate before modifying the aggregate to avoid partial changes in memory.
         Validate(name, email, address);
         Name = name.Trim();
         Email = email;
@@ -56,7 +56,7 @@ public sealed class Customer
         Version = Guid.NewGuid();
     }
 
-    // Usar microsegundos mantiene las fechas idénticas al persistirlas y volver a leerlas.
+    // Use microsecond precision to preserve timestamps when saving and reading them back.
     private static DateTimeOffset NormalizeTimestamp(DateTimeOffset now)
     {
         var utc = now.ToUniversalTime();
@@ -66,8 +66,8 @@ public sealed class Customer
     private static void Validate(string name, Email email, Address address)
     {
         if (string.IsNullOrWhiteSpace(name) || name.Length > NameMaxLength)
-            throw new DomainValidationException($"El nombre es obligatorio y admite hasta {NameMaxLength} caracteres.");
-        if (email is null) throw new DomainValidationException("El email es obligatorio.");
-        if (address is null) throw new DomainValidationException("La dirección es obligatoria.");
+            throw new DomainValidationException($"The name is required and must not exceed {NameMaxLength} characters.");
+        if (email is null) throw new DomainValidationException("The email address is required.");
+        if (address is null) throw new DomainValidationException("The address is required.");
     }
 }
