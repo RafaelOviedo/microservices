@@ -10,7 +10,7 @@ using OrderEntity = Order.Domain.Orders.Order;
 namespace Order.Application.Orders;
 
 public sealed class OrderService(IOrderRepository repository, ICustomerClient customers, IProductClient products,
-    IValidator<CreateOrderRequest> validator, IMapper mapper, TimeProvider clock) : IOrderService
+    IValidator<CreateOrderRequest> validator, IValidator<OrderHistoryQuery> historyValidator, IMapper mapper, TimeProvider clock) : IOrderService
 {
     public async Task<CreateOrderResponse> CreateAsync(CreateOrderRequest request, CancellationToken cancellationToken)
     {
@@ -34,6 +34,13 @@ public sealed class OrderService(IOrderRepository repository, ICustomerClient cu
         repository.Add(order);
         await repository.SaveChangesAsync(cancellationToken);
         return new CreateOrderResponse(mapper.Map<OrderResponse>(order), adjustments);
+    }
+
+    public async Task<OrderHistoryResponse> ListAsync(OrderHistoryQuery query, CancellationToken cancellationToken)
+    {
+        await historyValidator.ValidateAndThrowAsync(query, cancellationToken);
+        var (items, totalCount) = await repository.ListAsync(query, cancellationToken);
+        return new OrderHistoryResponse(mapper.Map<OrderResponse[]>(items), query.Page, query.PageSize, totalCount);
     }
 
     public async Task<OrderResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken)

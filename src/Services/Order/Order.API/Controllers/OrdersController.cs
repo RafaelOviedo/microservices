@@ -8,6 +8,12 @@ namespace Order.API.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
 public sealed class OrdersController(IOrderService service, IOrderProcessingService processing) : ControllerBase
 {
+    [HttpGet]
+    [ProducesResponseType<OrderHistoryResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<OrderHistoryResponse>> List([FromQuery] OrderHistoryQuery query, CancellationToken cancellationToken)
+        => Ok(await service.ListAsync(query, cancellationToken));
+
     [HttpPost]
     [ProducesResponseType<CreateOrderResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]

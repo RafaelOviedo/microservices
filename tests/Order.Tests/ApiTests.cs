@@ -19,7 +19,7 @@ public sealed class ApiTests(OrderApiFactory factory) : IClassFixture<OrderApiFa
     }
 
     [Fact]
-    public async Task SwaggerDescribesCreationAndRetrieval()
+    public async Task SwaggerDescribesTheCompleteOrderApi()
     {
         using var development = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
         using var client = development.CreateClient();
@@ -28,6 +28,9 @@ public sealed class ApiTests(OrderApiFactory factory) : IClassFixture<OrderApiFa
         Assert.Equal("Order API", schema.GetProperty("info").GetProperty("title").GetString());
         Assert.True(schema.GetProperty("paths").GetProperty("/api/orders").TryGetProperty("post", out _));
         Assert.True(schema.GetProperty("paths").GetProperty("/api/orders/{id}").TryGetProperty("get", out _));
+        Assert.True(schema.GetProperty("paths").GetProperty("/api/orders").TryGetProperty("get", out _));
+        Assert.True(schema.GetProperty("paths").GetProperty("/api/orders/{id}/confirm").TryGetProperty("post", out _));
+        Assert.True(schema.GetProperty("paths").GetProperty("/api/orders/{id}/cancel").TryGetProperty("post", out _));
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/orders", new { })).StatusCode);
     }
 }
